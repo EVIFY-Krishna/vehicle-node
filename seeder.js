@@ -10,6 +10,41 @@ dotenv.config();
 
 connectDB();
 
+const fleetNames = [
+    'North Zone Fleet',
+    'South Zone Fleet',
+    'East Zone Fleet',
+    'West Zone Fleet',
+    'Downtown Express Fleet',
+    'Airport Shuttle Fleet',
+    'Corporate Fleet',
+    'Delivery Fleet',
+    'Long Haul Fleet',
+    'Reserve Fleet'
+];
+
+const vehicleModels = [
+    'Tesla Model 3', 'Tata Nexon EV', 'MG ZS EV', 'Hyundai Kona Electric',
+    'Mahindra XUV400', 'BYD Atto 3', 'Kia EV6', 'Ford F-150 Lightning',
+    'Ola S1 Pro', 'Ather 450X'
+];
+
+const statuses = ['active', 'charging', 'maintenance'];
+
+function randomFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function generateRegistrationNumber(index) {
+    const stateCodes = ['GJ', 'MH', 'DL', 'KA', 'TN'];
+    const state = randomFrom(stateCodes);
+    const rtoCode = String(Math.floor(Math.random() * 99)).padStart(2, '0');
+    const letters = String.fromCharCode(65 + Math.floor(Math.random() * 26)) +
+        String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    const number = String(1000 + index).padStart(4, '0');
+    return `${state}-${rtoCode}-${letters}-${number}`;
+}
+
 const importData = async () => {
     try {
         await Role.deleteMany();
@@ -35,21 +70,34 @@ const importData = async () => {
             role: operatorRole._id
         });
 
-        const createdFleets = await Fleet.insertMany([
-            { name: 'Downtown Fleet' },
-            { name: 'Uptown Fleet' },
-            { name: 'Suburban Fleet' }
-        ]);
+        const fleetDocs = fleetNames.map(name => ({ name }));
+        const fleets = await Fleet.insertMany(fleetDocs);
+        console.log(`Inserted ${fleets.length} fleets`);
 
-        await Vehicle.create({
-            name: 'EV Delivery Van',
-            description: 'Standard electric delivery van used in downtown area.',
-            images: [],
-            registrationNumber: 'EV-1001',
-            model: 'Ford E-Transit',
-            status: 'active',
-            fleet: createdFleets[0]._id
+        const vehicleDocs = [];
+        let vehicleCounter = 1;
+
+        fleets.forEach((fleet, fleetIndex) => {
+            for (let i = 0; i < 2; i++) {
+                const model = randomFrom(vehicleModels);
+                vehicleDocs.push({
+                    name: `${model} - Unit ${vehicleCounter}`,
+                    description: `${model} assigned to ${fleet.name}, used for daily operations.`,
+                    images: [
+                        `https://picsum.photos/seed/vehicle${vehicleCounter}a/600/400`,
+                        `https://picsum.photos/seed/vehicle${vehicleCounter}b/600/400`
+                    ],
+                    registrationNumber: generateRegistrationNumber(vehicleCounter),
+                    model: model,
+                    status: randomFrom(statuses),
+                    fleet: fleet._id
+                });
+                vehicleCounter++;
+            }
         });
+
+        const vehicles = await Vehicle.insertMany(vehicleDocs);
+        console.log(`Inserted ${vehicles.length} vehicles`);
 
         console.log('Data Imported!');
         process.exit();
