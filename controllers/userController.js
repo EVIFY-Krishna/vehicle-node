@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const Role = require('../models/Role');
+const socket = require('../utils/socket');
 
 // @desc    Get all users (non-admin)
 // @route   GET /api/users
@@ -52,6 +53,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         }
 
         const updatedUser = await user.save();
+        socket.getIO().emit('data-updated', { entity: 'user', action: 'update' });
 
         res.json({
             _id: updatedUser._id,

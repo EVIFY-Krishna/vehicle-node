@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Vehicle = require('../models/Vehicle');
 const Fleet = require('../models/Fleet');
+const socket = require('../utils/socket');
 
 // @desc    Get all vehicles (with filtering & pagination)
 // @route   GET /api/vehicles
@@ -91,6 +92,7 @@ const createVehicle = asyncHandler(async (req, res) => {
     });
 
     const createdVehicle = await vehicle.save();
+    socket.getIO().emit('data-updated', { entity: 'vehicle', action: 'create' });
     res.status(201).json(createdVehicle);
 });
 
@@ -137,6 +139,7 @@ const updateVehicle = asyncHandler(async (req, res) => {
         }
 
         const updatedVehicle = await vehicle.save();
+        socket.getIO().emit('data-updated', { entity: 'vehicle', action: 'update' });
         res.json(updatedVehicle);
     } else {
         res.status(404);
@@ -152,6 +155,7 @@ const deleteVehicle = asyncHandler(async (req, res) => {
 
     if (vehicle) {
         await vehicle.deleteOne();
+        socket.getIO().emit('data-updated', { entity: 'vehicle', action: 'delete' });
         res.json({ message: 'Vehicle removed' });
     } else {
         res.status(404);

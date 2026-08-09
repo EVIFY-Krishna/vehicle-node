@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Fleet = require('../models/Fleet');
+const socket = require('../utils/socket');
 
 // @desc    Get all fleets
 // @route   GET /api/fleets
@@ -22,6 +23,7 @@ const createFleet = asyncHandler(async (req, res) => {
     }
 
     const fleet = await Fleet.create({ name });
+    socket.getIO().emit('data-updated', { entity: 'fleet', action: 'create' });
     res.status(201).json(fleet);
 });
 
@@ -34,6 +36,7 @@ const updateFleet = asyncHandler(async (req, res) => {
     if (fleet) {
         fleet.name = req.body.name || fleet.name;
         const updatedFleet = await fleet.save();
+        socket.getIO().emit('data-updated', { entity: 'fleet', action: 'update' });
         res.json(updatedFleet);
     } else {
         res.status(404);
@@ -49,6 +52,7 @@ const deleteFleet = asyncHandler(async (req, res) => {
     
     if (fleet) {
         await Fleet.deleteOne({ _id: fleet._id });
+        socket.getIO().emit('data-updated', { entity: 'fleet', action: 'delete' });
         res.json({ message: 'Fleet removed' });
     } else {
         res.status(404);

@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const generateToken = require('../utils/generateToken');
+const socket = require('../utils/socket');
 
 // @desc    Register a new user (operator)
 // @route   POST /api/auth/register
@@ -31,6 +32,7 @@ const registerUser = asyncHandler(async (req, res) => {
     });
 
     if (user) {
+        socket.getIO().emit('data-updated', { entity: 'user', action: 'create' });
         res.status(201).json({
             _id: user._id,
             name: user.name,
